@@ -14,5 +14,5 @@ class Player:
         return self._symbol
 
     @symbol.setter
-    def symbol(self, symbol):
+    def symbol(self, symbol: str):
         self._symbol = symbol

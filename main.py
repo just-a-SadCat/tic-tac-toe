@@ -28,10 +28,11 @@ def main(room: Room):
             break
 
 
-player1 = Player(420, "Andrew")
-player2 = Player(69, "Ashley")
+if __name__ == "__main__":
+    player1 = Player(420, "Andrew")
+    player2 = Player(69, "Ashley")
 
-room = Room(1, player1, player2)
-room.assign_symbols()
+    room = Room(1, player1, player2)
+    room.assign_symbols()
 
-main(room)
+    main(room)

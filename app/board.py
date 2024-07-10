@@ -1,4 +1,5 @@
 from app.exc import IncorrectInput, InvalidPlay
+from app.player import Player
 
 
 class Board:
@@ -9,7 +10,7 @@ class Board:
             ["[ ]", "[ ]", "[ ]"],
         ]
 
-    def check_victory(self, player):
+    def check_victory(self, player: Player):
         symbol = f"[{player.symbol}]"
 
         for x in range(0, 3):
@@ -55,24 +56,24 @@ class Board:
                     return False
         return True
 
-    def edit_field(self, symbol) -> None:
+    def edit_field(self, symbol: str) -> None:
         try:
             print("Select (Pick from 1 to 3): 1.row 2.column:")
-            x = int(input())
-            y = int(input())
+            x = int(input()) - 1
+            y = int(input()) - 1
         except ValueError:
             raise IncorrectInput("The input was not a number")
 
-        if x > 3 or x < 1 or y > 3 or y < 0:
-            raise IncorrectInput(
-                "The input was a number not corresponding to any row/column"
-            )
+        if x < 0 or y < 0:
+            raise IncorrectInput("Thr input was a zero or a negative number")
+        try:
+            if self.fields[x][y] == "[ ]":
+                self.fields[x][y] = f"[{symbol}]"
+            else:
+                raise InvalidPlay("A used field was chosen")
+        except IndexError:
+            raise IncorrectInput("The chosen indexes were invalid")
 
-        if self.fields[x - 1][y - 1] == "[ ]":
-            self.fields[x - 1][y - 1] = f"[{symbol}]"
-        else:
-            raise InvalidPlay("A used field was chosen")
-
-    def print_board(self):
+    def print_board(self) -> None:
         for i in range(0, 3):
             print(self.fields[i][0], self.fields[i][1], self.fields[i][2])
