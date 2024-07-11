@@ -46,7 +46,7 @@ class Board:
 
     def edit_field(self, symbol: str) -> None:
         try:
-            print("Select (Pick from 1 to 3): 1.row 2.column:")
+            print("Select row first, then column (Pick from 1 to 3): ")
             x = int(input()) - 1
             y = int(input()) - 1
         except ValueError:
