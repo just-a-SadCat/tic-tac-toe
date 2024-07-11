@@ -4,7 +4,7 @@ from app.player import Player
 
 class Board:
     def __init__(self):
-        self.fields = [
+        self._fields = [
             ["[ ]", "[ ]", "[ ]"],
             ["[ ]", "[ ]", "[ ]"],
             ["[ ]", "[ ]", "[ ]"],
@@ -13,36 +13,24 @@ class Board:
     def check_victory(self, player: Player):
         symbol = f"[{player.symbol}]"
 
-        for x in range(0, 3):
-            if (
-                self.fields[x][0] == symbol
-                and self.fields[x][1] == symbol
-                and self.fields[x][2] == symbol
-            ):
+        for row in self._fields:
+            if all(col == symbol for col in row):
                 print(f"{player.name} wins, a full row!")
                 return True
 
-        for y in range(0, 3):
-            if (
-                self.fields[0][y] == symbol
-                and self.fields[1][y] == symbol
-                and self.fields[2][y] == symbol
-            ):
+        for col in range(0, 3):
+            if all(self._fields[i][col] == symbol for i in range(3)):
                 print(f"{player.name} wins, a full column!")
                 return True
 
-        if (
-            self.fields[0][0] == symbol
-            and self.fields[1][1] == symbol
-            and self.fields[2][2] == symbol
-        ):
+        if all(self._fields[i][i] == symbol for i in range(3)):
             print(f"{player.name} wins, a full diagonal!")
             return True
 
         if (
-            self.fields[0][2] == symbol
-            and self.fields[1][1] == symbol
-            and self.fields[2][0] == symbol
+            self._fields[0][2] == symbol
+            and self._fields[1][1] == symbol
+            and self._fields[2][0] == symbol
         ):
             print(f"{player.name} wins, a full diagonal!")
             return True
@@ -50,9 +38,9 @@ class Board:
         return False
 
     def check_stalemate(self):
-        for x in range(0, 3):
-            for y in range(0, 3):
-                if self.fields[x][y] == "[ ]":
+        for row in self._fields:
+            for col in row:
+                if col == "[ ]":
                     return False
         return True
 
@@ -67,13 +55,13 @@ class Board:
         if x < 0 or y < 0:
             raise IncorrectInput("Thr input was a zero or a negative number")
         try:
-            if self.fields[x][y] == "[ ]":
-                self.fields[x][y] = f"[{symbol}]"
+            if self._fields[x][y] == "[ ]":
+                self._fields[x][y] = f"[{symbol}]"
             else:
                 raise InvalidPlay("A used field was chosen")
         except IndexError:
             raise IncorrectInput("The chosen indexes were invalid")
 
     def print_board(self) -> None:
-        for i in range(0, 3):
-            print(self.fields[i][0], self.fields[i][1], self.fields[i][2])
+        for row in self._fields:
+            print(row[0], row[1], row[2])
