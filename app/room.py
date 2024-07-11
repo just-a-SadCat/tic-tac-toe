@@ -5,7 +5,7 @@ from app.player import Player, Symbols
 
 
 class Room:
-    def __init__(self, room_id: uuid, first_player: Player):
+    def __init__(self, room_id: uuid.UUID, first_player: Player):
         self._room_id = room_id
         self._first_player = first_player
         self._second_player: Player | None = None
@@ -29,14 +29,14 @@ class Room:
     def print_board(self) -> None:
         self._board.print_board()
 
-    def assign_symbols(self) -> None:
+    def _assign_symbols(self) -> None:
         self._first_player.symbol = Symbols.X.value
         self._second_player.symbol = Symbols.O.value
 
     def add_player(self, player: Player) -> None:
         if self._second_player is None:
             self._second_player = player
-            self.assign_symbols()
+            self._assign_symbols()
         else:
             raise RoomFull("The room is already full!")
 
@@ -45,7 +45,7 @@ class Room:
             return False
         return True
 
-    def switch_players(self) -> None:
+    def _switch_players(self) -> None:
         if self._active_player is self._first_player:
             self._active_player = self._second_player
             return
@@ -54,7 +54,7 @@ class Room:
     def make_play(self, player: Player, row: int, col: int) -> None:
         if player is self._active_player:
             self._board.edit_field(player.symbol, row, col)
-            self.switch_players()
+            self._switch_players()
         else:
             raise OutOfOrder(
                 "A player tried interacting while not being the active player"

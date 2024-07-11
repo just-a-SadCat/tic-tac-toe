@@ -3,7 +3,7 @@ import uuid
 
 
 class Player:
-    def __init__(self, player_id: uuid, name: str) -> None:
+    def __init__(self, player_id: uuid.UUID, name: str) -> None:
         self._player_id = player_id
         self.name = name
         self._symbol: str | None = None
