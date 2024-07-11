@@ -8,54 +8,64 @@ class Room:
     def __init__(self, room_id: uuid, first_player: Player):
         self._room_id = room_id
         self._first_player = first_player
-        self._second_player = None
-        self.board = Board()
+        self._second_player: Player | None = None
+        self._board = Board()
         self._active_player = first_player
 
     @property
-    def room_id(self):
+    def room_id(self) -> int:
         return self._room_id
 
     @property
-    def second_player(self):
+    def second_player(self) -> Player:
         if self._second_player is None:
             raise LookupError("A player wasn't assigned!")
         return self._second_player
 
-    @second_player.setter
-    def second_player(self, second_player: Player):
-        self._second_player = second_player
-
     @property
-    def active_player(self):
+    def active_player(self) -> Player:
         return self._active_player
+
+    def print_board(self) -> None:
+        self._board.print_board()
 
     def assign_symbols(self) -> None:
         self._first_player.symbol = Symbols.X.value
-        self.second_player.symbol = Symbols.O.value
+        self._second_player.symbol = Symbols.O.value
 
-    def swap_players(self, previous_player: Player) -> None:
-        if previous_player is self._first_player:
-            self._active_player = self.second_player
+    def add_player(self, player: Player) -> None:
+        if self._second_player is None:
+            self._second_player = player
+            self.assign_symbols()
+        else:
+            raise RoomFull("The room is already full!")
+
+    def is_full(self) -> bool:
+        if self._second_player is None:
+            return False
+        return True
+
+    def switch_players(self) -> None:
+        if self._active_player is self._first_player:
+            self._active_player = self._second_player
             return
         self._active_player = self._first_player
 
-    def make_play(self, player: Player) -> None:
+    def make_play(self, player: Player, row: int, col: int) -> None:
         if player is self._active_player:
-            self.board.edit_field(player.symbol)
-            self.swap_players(player)
+            self._board.edit_field(player.symbol, row, col)
+            self.switch_players()
         else:
             raise OutOfOrder(
                 "A player tried interacting while not being the active player"
             )
 
-    def add_player(self, player: Player) -> None:
-        if self._second_player is None:
-            self.set_second_player(player)
-        else:
-            raise RoomFull("The room is already full!")
-
-    def isFull(self):
-        if self._second_player is None:
-            return False
-        return True
+    def check_board_state(self, active_player: Player) -> bool:
+        if self._board.check_victory(active_player):
+            self.print_board()
+            return True
+        if self._board.check_stalemate():
+            print("It's a stalemate!")
+            self.print_board()
+            return True
+        return False

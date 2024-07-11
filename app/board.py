@@ -3,14 +3,29 @@ from app.player import Player
 
 
 class Board:
-    def __init__(self):
+    def __init__(self) -> None:
         self._fields = [
             ["[ ]", "[ ]", "[ ]"],
             ["[ ]", "[ ]", "[ ]"],
             ["[ ]", "[ ]", "[ ]"],
         ]
 
-    def check_victory(self, player: Player):
+    def print_board(self) -> None:
+        for row in self._fields:
+            print(row[0], row[1], row[2])
+
+    def edit_field(self, symbol: str, row: int, col: int) -> None:
+        if row < 0 or col < 0:
+            raise IncorrectInput("Thr input was a zero or a negative number")
+        try:
+            if self._fields[row][col] == "[ ]":
+                self._fields[row][col] = f"[{symbol}]"
+            else:
+                raise InvalidPlay("A used field was chosen")
+        except IndexError:
+            raise IncorrectInput("The chosen indexes were invalid")
+
+    def check_victory(self, player: Player) -> bool:
         symbol = f"[{player.symbol}]"
 
         for row in self._fields:
@@ -37,31 +52,9 @@ class Board:
 
         return False
 
-    def check_stalemate(self):
+    def check_stalemate(self) -> bool:
         for row in self._fields:
             for col in row:
                 if col == "[ ]":
                     return False
         return True
-
-    def edit_field(self, symbol: str) -> None:
-        try:
-            print("Select row first, then column (Pick from 1 to 3): ")
-            x = int(input()) - 1
-            y = int(input()) - 1
-        except ValueError:
-            raise IncorrectInput("The input was not a number")
-
-        if x < 0 or y < 0:
-            raise IncorrectInput("Thr input was a zero or a negative number")
-        try:
-            if self._fields[x][y] == "[ ]":
-                self._fields[x][y] = f"[{symbol}]"
-            else:
-                raise InvalidPlay("A used field was chosen")
-        except IndexError:
-            raise IncorrectInput("The chosen indexes were invalid")
-
-    def print_board(self) -> None:
-        for row in self._fields:
-            print(row[0], row[1], row[2])
