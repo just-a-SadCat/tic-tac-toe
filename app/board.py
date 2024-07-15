@@ -1,12 +1,12 @@
-from enum import Enum
+from enum import StrEnum
 from app.exc import IncorrectInput, InvalidPlay
 from app.player import Player
 
 
-class BoardStates(Enum):
-    no_win = 0
-    win = 1
-    stalemate = 2
+class BoardStates(StrEnum):
+    NO_WIN = 0
+    WIN = 1
+    STALEMATE = 2
 
 
 class Board:
@@ -38,16 +38,16 @@ class Board:
         for row in self._fields:
             if all(col == symbol for col in row):
                 print(f"{player.name} wins, a full row!")
-                return BoardStates.win.value
+                return True
 
         for col in range(0, 3):
             if all(self._fields[i][col] == symbol for i in range(3)):
                 print(f"{player.name} wins, a full column!")
-                return BoardStates.win.value
+                return True
 
         if all(self._fields[i][i] == symbol for i in range(3)):
             print(f"{player.name} wins, a full diagonal!")
-            return BoardStates.win.value
+            return True
 
         if (
             self._fields[0][2] == symbol
@@ -55,9 +55,9 @@ class Board:
             and self._fields[2][0] == symbol
         ):
             print(f"{player.name} wins, a full diagonal!")
-            return BoardStates.win.value
+            return True
 
-        return BoardStates.no_win.value
+        return False
 
     def check_stalemate(self) -> bool:
         for row in self._fields:

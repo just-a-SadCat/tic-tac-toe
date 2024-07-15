@@ -4,6 +4,7 @@ from fastapi import Body, FastAPI, HTTPException, Path
 from pydantic import BaseModel
 from starlette import status
 
+from app.board import BoardStates
 from app.exc import IncorrectInput, InvalidPlay, OutOfOrder, RoomFull, RoomNotFull
 from app.player import Player
 from app.room import Room
@@ -132,17 +133,38 @@ async def make_play(
             status_code=status.HTTP_400_BAD_REQUEST,
             details="Player attempted an impossible play",
         )
-    response = (
-        f"Player {player.name} made a play at row {input.row}, column {input.col}."
-    )
-    return response
+    return room.check_board_state(player)
 
 
-@app.get("/rooms/{room_id}/board", response_model=bool, status_code=status.HTTP_200_OK)
-async def check_board_state(
-    room_id: Annotated[uuid.UUID, Path()],
-    player_id: Annotated[uuid.UUID, Body(embed=True)],
-) -> bool:
+# @app.get(
+#     "/rooms/{room_id}/board", response_model=BoardStates, status_code=status.HTTP_200_OK
+# )
+# async def check_board_state(
+#     room_id: Annotated[uuid.UUID, Path()],
+#     player_id: Annotated[uuid.UUID, Body(embed=True)],
+# ) -> BoardStates:
+#     try:
+#         room = rooms[room_id]
+#     except KeyError:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             details="Room with given id not found",
+#         )
+
+#     try:
+#         player = players[player_id]
+#     except KeyError:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             details="Player with given id not found",
+#         )
+#     return room.check_board_state(player)
+
+
+@app.get("/rooms/{room_id}/players", response_model=str, status_code=status.HTTP_200_OK)
+async def end_turn(
+    room_id: Annotated[uuid.UUID, Path()], board_state: Annotated[BoardStates, Body()]
+) -> str:
     try:
         room = rooms[room_id]
     except KeyError:
@@ -150,12 +172,10 @@ async def check_board_state(
             status_code=status.HTTP_404_NOT_FOUND,
             details="Room with given id not found",
         )
-
-    try:
-        player = players[input.player_id]
-    except KeyError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            details="Player with given id not found",
-        )
-    return room.check_board_state()
+    result = "Next turn"
+    if board_state == BoardStates.WIN:
+        ...
+    elif board_state == BoardStates.STALEMATE:
+        ...
+    room.switch_players()
+    return result
