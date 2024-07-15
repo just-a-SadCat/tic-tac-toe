@@ -1,9 +1,9 @@
-from enum import StrEnum
+from enum import Enum
 from app.exc import IncorrectInput, InvalidPlay
 from app.player import Player
 
 
-class BoardStates(StrEnum):
+class BoardStates(str, Enum):
     NO_WIN = 0
     WIN = 1
     STALEMATE = 2

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from enum import StrEnum
+from enum import Enum
 import uuid
 
 
@@ -25,6 +25,6 @@ class Player:
         self._symbol = symbol
 
 
-class Symbols(StrEnum):
+class Symbols(str, Enum):
     X = "X"
     O = "O"

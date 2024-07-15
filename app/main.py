@@ -34,7 +34,7 @@ class PlayInput(BaseModel):
 @app.post("/rooms", response_model=uuid.UUID, status_code=status.HTTP_201_CREATED)
 async def create_room(player_id: Annotated[int, Body(embed=True)]) -> uuid.UUID:
     room_id = uuid.uuid4()
-    room = Room(room_id, players[player_id, temp_player])
+    room = Room(room_id, players[player_id])
     rooms[room_id] = room
     return room.room_id()
 
@@ -74,7 +74,7 @@ async def add_player(
     response_model=list[PlayerSchema],
     status_code=status.HTTP_200_OK,
 )
-async def display_players(room_id: Annotated[uuid.UUID, Path()]) -> list[Player]:
+async def get_players(room_id: Annotated[uuid.UUID, Path()]) -> list[Player]:
     try:
         room = rooms[room_id]
     except KeyError:
@@ -96,11 +96,13 @@ async def display_players(room_id: Annotated[uuid.UUID, Path()]) -> list[Player]
 
 
 @app.put(
-    "/rooms/{room_id}/board", response_model=str, status_code=status.HTTP_204_NO_CONTENT
+    "/rooms/{room_id}/board",
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT,
 )
 async def make_play(
-    room_id: Annotated[uuid.UUID, Path()], input: Annotated[PlayInput, Body(embed=True)]
-) -> str:
+    room_id: Annotated[uuid.UUID, Path()], input: Annotated[PlayInput, Body()]
+) -> None:
     try:
         room = rooms[room_id]
     except KeyError:
@@ -133,32 +135,31 @@ async def make_play(
             status_code=status.HTTP_400_BAD_REQUEST,
             details="Player attempted an impossible play",
         )
+
+
+@app.get(
+    "/rooms/{room_id}/board", response_model=BoardStates, status_code=status.HTTP_200_OK
+)
+async def check_board_state(
+    room_id: Annotated[uuid.UUID, Path()],
+    player_id: Annotated[uuid.UUID, Body(embed=True)],
+) -> BoardStates:
+    try:
+        room = rooms[room_id]
+    except KeyError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            details="Room with given id not found",
+        )
+
+    try:
+        player = players[player_id]
+    except KeyError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            details="Player with given id not found",
+        )
     return room.check_board_state(player)
-
-
-# @app.get(
-#     "/rooms/{room_id}/board", response_model=BoardStates, status_code=status.HTTP_200_OK
-# )
-# async def check_board_state(
-#     room_id: Annotated[uuid.UUID, Path()],
-#     player_id: Annotated[uuid.UUID, Body(embed=True)],
-# ) -> BoardStates:
-#     try:
-#         room = rooms[room_id]
-#     except KeyError:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             details="Room with given id not found",
-#         )
-
-#     try:
-#         player = players[player_id]
-#     except KeyError:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             details="Player with given id not found",
-#         )
-#     return room.check_board_state(player)
 
 
 @app.get("/rooms/{room_id}/players", response_model=str, status_code=status.HTTP_200_OK)
@@ -177,5 +178,5 @@ async def end_turn(
         ...
     elif board_state == BoardStates.STALEMATE:
         ...
-    room.switch_players()
+    
     return result

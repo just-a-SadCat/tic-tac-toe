@@ -48,7 +48,7 @@ class Room:
         if self._second_player is None:
             raise RoomNotFull("The room is not full yet!")
 
-    def switch_players(self) -> None:
+    def _switch_players(self) -> None:
         if self._active_player is self._first_player:
             self._active_player = self._second_player
             return
@@ -57,6 +57,7 @@ class Room:
     def make_play(self, player: Player, row: int, col: int) -> None:
         if player is self._active_player:
             self._board.edit_field(player.symbol, row, col)
+            self._switch_players()
         else:
             raise OutOfOrder(
                 "A player tried interacting while not being the active player"
@@ -71,3 +72,18 @@ class Room:
             self.print_board()
             return BoardStates.STALEMATE
         return BoardStates.NO_WIN
+
+    def compare_board_states(self):
+        stateFirst: BoardStates = self.check_board_state(self._first_player)
+        stateSecond: BoardStates = self.check_board_state(self._second_player)
+
+        # match stateFirst:
+
+        if stateFirst is BoardStates.STALEMATE or stateSecond is BoardStates.STALEMATE:
+            ...
+        elif stateFirst is stateSecond:
+            ...
+        elif stateFirst is BoardStates.WIN:
+            ...
+        else:
+            ...
