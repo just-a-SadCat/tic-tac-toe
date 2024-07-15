@@ -1,7 +1,9 @@
+from dataclasses import dataclass
 from enum import Enum
 import uuid
 
 
+@dataclass
 class Player:
     def __init__(self, player_id: uuid.UUID, name: str) -> None:
         self._player_id = player_id

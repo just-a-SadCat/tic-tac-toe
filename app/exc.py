@@ -12,3 +12,7 @@ class OutOfOrder(Exception):
 
 class RoomFull(Exception):
     pass
+
+
+class RoomNotFull(Exception):
+    pass

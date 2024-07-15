@@ -1,6 +1,6 @@
 import uuid
-from app.board import Board
-from app.exc import OutOfOrder, RoomFull
+from app.board import Board, BoardStates
+from app.exc import OutOfOrder, RoomFull, RoomNotFull
 from app.player import Player, Symbols
 
 
@@ -15,6 +15,10 @@ class Room:
     @property
     def room_id(self) -> int:
         return self._room_id
+
+    @property
+    def first_player(self) -> Player:
+        return self._first_player
 
     @property
     def second_player(self) -> Player:
@@ -40,10 +44,9 @@ class Room:
         else:
             raise RoomFull("The room is already full!")
 
-    def is_full(self) -> bool:
+    def is_full(self) -> None:
         if self._second_player is None:
-            return False
-        return True
+            raise RoomNotFull("The room is not full yet!")
 
     def _switch_players(self) -> None:
         if self._active_player is self._first_player:
@@ -60,12 +63,12 @@ class Room:
                 "A player tried interacting while not being the active player"
             )
 
-    def check_board_state(self, active_player: Player) -> bool:
-        if self._board.check_victory(active_player):
+    def check_board_state(self, active_player: Player) -> BoardStates:
+        if self._board.check_victory(active_player) == BoardStates.win.value:
             self.print_board()
-            return True
+            return BoardStates.win.value
         if self._board.check_stalemate():
             print("It's a stalemate!")
             self.print_board()
-            return True
-        return False
+            return BoardStates.stalemate.value
+        return BoardStates.no_win.value

@@ -1,5 +1,12 @@
+from enum import Enum
 from app.exc import IncorrectInput, InvalidPlay
 from app.player import Player
+
+
+class BoardStates(Enum):
+    no_win = 0
+    win = 1
+    stalemate = 2
 
 
 class Board:
@@ -25,22 +32,22 @@ class Board:
         except IndexError:
             raise IncorrectInput("The chosen indexes were invalid")
 
-    def check_victory(self, player: Player) -> bool:
+    def check_victory(self, player: Player) -> BoardStates:
         symbol = f"[{player.symbol}]"
 
         for row in self._fields:
             if all(col == symbol for col in row):
                 print(f"{player.name} wins, a full row!")
-                return True
+                return BoardStates.win.value
 
         for col in range(0, 3):
             if all(self._fields[i][col] == symbol for i in range(3)):
                 print(f"{player.name} wins, a full column!")
-                return True
+                return BoardStates.win.value
 
         if all(self._fields[i][i] == symbol for i in range(3)):
             print(f"{player.name} wins, a full diagonal!")
-            return True
+            return BoardStates.win.value
 
         if (
             self._fields[0][2] == symbol
@@ -48,9 +55,9 @@ class Board:
             and self._fields[2][0] == symbol
         ):
             print(f"{player.name} wins, a full diagonal!")
-            return True
+            return BoardStates.win.value
 
-        return False
+        return BoardStates.no_win.value
 
     def check_stalemate(self) -> bool:
         for row in self._fields:
