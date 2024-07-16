@@ -5,9 +5,16 @@ from pydantic import BaseModel
 from starlette import status
 
 from app.board import BoardStates
-from app.exc import IncorrectInput, InvalidPlay, OutOfOrder, RoomFull, RoomNotFull
+from app.exc import (
+    IncorrectInput,
+    InvalidPlay,
+    OutOfOrder,
+    RoomFull,
+    RoomNotFull,
+    BoardStatesNotFound,
+)
 from app.player import Player
-from app.room import Room
+from app.room import NextTurn, Room, WinnerStates
 
 app = FastAPI()
 
@@ -27,8 +34,8 @@ class PlayerSchema(BaseModel):
 
 class PlayInput(BaseModel):
     player_id: uuid.UUID
-    col: int
     row: int
+    col: int
 
 
 @app.post("/rooms", response_model=uuid.UUID, status_code=status.HTTP_201_CREATED)
@@ -138,12 +145,11 @@ async def make_play(
 
 
 @app.get(
-    "/rooms/{room_id}/board", response_model=BoardStates, status_code=status.HTTP_200_OK
+    "/rooms/{room_id}/board",
+    response_model=uuid.UUID | NextTurn,
+    status_code=status.HTTP_200_OK,
 )
-async def check_board_state(
-    room_id: Annotated[uuid.UUID, Path()],
-    player_id: Annotated[uuid.UUID, Body(embed=True)],
-) -> BoardStates:
+async def decide_result(room_id: Annotated[uuid.UUID, Path()]) -> uuid.UUID | NextTurn:
     try:
         room = rooms[room_id]
     except KeyError:
@@ -151,32 +157,19 @@ async def check_board_state(
             status_code=status.HTTP_404_NOT_FOUND,
             details="Room with given id not found",
         )
-
+    result = room.compare_board_states()
     try:
-        player = players[player_id]
-    except KeyError:
+        match result:
+            case WinnerStates.NONE:
+                return NextTurn.YES
+            case WinnerStates.FIRST:
+                return room.first_player.player_id
+            case WinnerStates.SECOND:
+                return room.second_player.player_id
+            case WinnerStates.STALEMATE:
+                return NextTurn.NO
+    except BoardStatesNotFound:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            details="Player with given id not found",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            details="Failed to find the board states",
         )
-    return room.check_board_state(player)
-
-
-@app.get("/rooms/{room_id}/players", response_model=str, status_code=status.HTTP_200_OK)
-async def end_turn(
-    room_id: Annotated[uuid.UUID, Path()], board_state: Annotated[BoardStates, Body()]
-) -> str:
-    try:
-        room = rooms[room_id]
-    except KeyError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            details="Room with given id not found",
-        )
-    result = "Next turn"
-    if board_state == BoardStates.WIN:
-        ...
-    elif board_state == BoardStates.STALEMATE:
-        ...
-    
-    return result

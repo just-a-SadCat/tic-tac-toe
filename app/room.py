@@ -1,8 +1,19 @@
+from enum import Enum
 import uuid
 from app.board import Board, BoardStates
-from app.exc import OutOfOrder, RoomFull, RoomNotFull
+from app.exc import BoardStatesNotFound, OutOfOrder, RoomFull, RoomNotFull
 from app.player import Player, Symbols
 
+
+class WinnerStates(str, Enum):
+    NONE: 0
+    FIRST: 1
+    SECOND: 2
+    STALEMATE: 3
+
+class NextTurn(str, Enum):
+    NO: 0
+    YES: 1
 
 class Room:
     def __init__(self, room_id: uuid.UUID, first_player: Player):
@@ -63,7 +74,7 @@ class Room:
                 "A player tried interacting while not being the active player"
             )
 
-    def check_board_state(self, active_player: Player) -> BoardStates:
+    def _check_board_state(self, active_player: Player) -> BoardStates:
         if self._board.check_victory(active_player):
             self.print_board()
             return BoardStates.WIN
@@ -73,17 +84,18 @@ class Room:
             return BoardStates.STALEMATE
         return BoardStates.NO_WIN
 
-    def compare_board_states(self):
-        stateFirst: BoardStates = self.check_board_state(self._first_player)
-        stateSecond: BoardStates = self.check_board_state(self._second_player)
+    def compare_board_states(self) -> WinnerStates:
+        stateFirst: BoardStates = self._check_board_state(self._first_player)
+        stateSecond: BoardStates = self._check_board_state(self._second_player)
 
-        # match stateFirst:
-
-        if stateFirst is BoardStates.STALEMATE or stateSecond is BoardStates.STALEMATE:
-            ...
-        elif stateFirst is stateSecond:
-            ...
-        elif stateFirst is BoardStates.WIN:
-            ...
-        else:
-            ...
+        match stateFirst:
+            case BoardStates.STALEMATE:
+                return WinnerStates.STALEMATE
+            case BoardStates.WIN:
+                return WinnerStates.FIRST
+            case BoardStates.NO_WIN:
+                if stateSecond is BoardStates.WIN:
+                    return WinnerStates.FIRST
+                return WinnerStates.NONE
+            case _:
+                raise BoardStatesNotFound("Couldn't find a boardstate, somehow")

@@ -16,3 +16,7 @@ class RoomFull(Exception):
 
 class RoomNotFull(Exception):
     pass
+
+
+class BoardStatesNotFound(Exception):
+    pass
