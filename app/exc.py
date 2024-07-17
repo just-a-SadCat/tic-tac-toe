@@ -20,3 +20,7 @@ class RoomNotFull(Exception):
 
 class BoardStatesNotFound(Exception):
     pass
+
+
+class DuplicatePlayer(Exception):
+    pass

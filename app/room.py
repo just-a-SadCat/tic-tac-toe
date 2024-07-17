@@ -1,19 +1,27 @@
 from enum import Enum
 import uuid
 from app.board import Board, BoardStates
-from app.exc import BoardStatesNotFound, OutOfOrder, RoomFull, RoomNotFull
+from app.exc import (
+    BoardStatesNotFound,
+    DuplicatePlayer,
+    OutOfOrder,
+    RoomFull,
+    RoomNotFull,
+)
 from app.player import Player, Symbols
 
 
 class WinnerStates(str, Enum):
-    NONE: 0
-    FIRST: 1
-    SECOND: 2
-    STALEMATE: 3
+    NONE = 0
+    FIRST = 1
+    SECOND = 2
+    STALEMATE = 3
+
 
 class NextTurn(str, Enum):
-    NO: 0
-    YES: 1
+    NO = 0
+    YES = 1
+
 
 class Room:
     def __init__(self, room_id: uuid.UUID, first_player: Player):
@@ -41,8 +49,8 @@ class Room:
     def active_player(self) -> Player:
         return self._active_player
 
-    def print_board(self) -> None:
-        self._board.print_board()
+    def print_board(self) -> list[list[str]]:
+        return self._board.fields
 
     def _assign_symbols(self) -> None:
         self._first_player.symbol = Symbols.X.value
@@ -50,8 +58,11 @@ class Room:
 
     def add_player(self, player: Player) -> None:
         if self._second_player is None:
-            self._second_player = player
-            self._assign_symbols()
+            if not player is self._first_player:
+                self._second_player = player
+                self._assign_symbols()
+            else:
+                raise DuplicatePlayer("Cannot add a player already inside!")
         else:
             raise RoomFull("The room is already full!")
 
@@ -76,11 +87,8 @@ class Room:
 
     def _check_board_state(self, active_player: Player) -> BoardStates:
         if self._board.check_victory(active_player):
-            self.print_board()
             return BoardStates.WIN
         if self._board.check_stalemate():
-            print("It's a stalemate!")
-            self.print_board()
             return BoardStates.STALEMATE
         return BoardStates.NO_WIN
 
@@ -95,7 +103,7 @@ class Room:
                 return WinnerStates.FIRST
             case BoardStates.NO_WIN:
                 if stateSecond is BoardStates.WIN:
-                    return WinnerStates.FIRST
+                    return WinnerStates.SECOND
                 return WinnerStates.NONE
             case _:
                 raise BoardStatesNotFound("Couldn't find a boardstate, somehow")

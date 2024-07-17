@@ -17,16 +17,16 @@ class Board:
             ["[ ]", "[ ]", "[ ]"],
         ]
 
-    def print_board(self) -> None:
-        for row in self._fields:
-            print(row[0], row[1], row[2])
+    @property
+    def fields(self) -> list[list[str]]:
+        return self._fields
 
     def edit_field(self, symbol: str, row: int, col: int) -> None:
-        if row < 0 or col < 0:
-            raise IncorrectInput("Thr input was a zero or a negative number")
+        if row < 1 or col < 1:
+            raise IncorrectInput("The input was a zero or a negative number")
         try:
-            if self._fields[row][col] == "[ ]":
-                self._fields[row][col] = f"[{symbol}]"
+            if self._fields[row - 1][col - 1] == "[ ]":
+                self._fields[row - 1][col - 1] = f"[{symbol}]"
             else:
                 raise InvalidPlay("A used field was chosen")
         except IndexError:
