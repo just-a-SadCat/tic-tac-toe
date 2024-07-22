@@ -12,15 +12,15 @@ from app.player import Player, Symbols
 
 
 class WinnerStates(str, Enum):
-    NONE = 0
-    FIRST = 1
-    SECOND = 2
-    STALEMATE = 3
+    NONE = "NONE"
+    FIRST = "FIRST"
+    SECOND = "SECOND"
+    STALEMATE = "STALEMATE"
 
 
 class NextTurn(str, Enum):
-    NO = 0
-    YES = 1
+    NO = "NO"
+    YES = "YES"
 
 
 class Room:

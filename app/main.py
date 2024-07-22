@@ -1,10 +1,12 @@
 from typing import Annotated
 import uuid
-from fastapi import Body, FastAPI, HTTPException, Path
+from fastapi import Body, Depends, FastAPI, HTTPException, Path
 from pydantic import BaseModel
 from starlette import status
+from sqlalchemy.orm import Session
 
 from app.board import BoardStates
+from app.db import get_session
 from app.exc import (
     DuplicatePlayer,
     IncorrectInput,
@@ -16,6 +18,7 @@ from app.exc import (
 )
 from app.player import Player
 from app.room import NextTurn, Room, WinnerStates
+from app.schema.schema import PlayInput, PlayerSchema
 
 app = FastAPI()
 
@@ -27,28 +30,23 @@ temp_player = Player(temp_uuid, "Maks")
 players[temp_uuid] = temp_player
 
 
-class PlayerSchema(BaseModel):
-    player_id: uuid.UUID
-    name: str
-    symbol: str
-
-
-class PlayInput(BaseModel):
-    player_id: uuid.UUID
-    row: int
-    col: int
-
-
 @app.post("/players", response_model=uuid.UUID, status_code=status.HTTP_201_CREATED)
-async def create_player(name: Annotated[str, Body(embed=True)]) -> uuid.UUID:
+async def create_player(
+    *, session: Session = Depends(get_session), name: Annotated[str, Body(embed=True)]
+) -> uuid.UUID:
     player_id = uuid.uuid4()
     player = Player(player_id, name)
     players[player_id] = player
+    session.add(player)
     return player.player_id
 
 
 @app.post("/rooms", response_model=uuid.UUID, status_code=status.HTTP_201_CREATED)
-async def create_room(player_id: Annotated[uuid.UUID, Body(embed=True)]) -> uuid.UUID:
+async def create_room(
+    *,
+    session: Session = Depends(get_session),
+    player_id: Annotated[uuid.UUID, Body(embed=True)],
+) -> uuid.UUID:
     room_id = uuid.uuid4()
     try:
         player = players[player_id]
@@ -59,11 +57,14 @@ async def create_room(player_id: Annotated[uuid.UUID, Body(embed=True)]) -> uuid
         )
     room = Room(room_id, player)
     rooms[room_id] = room
+    session.add(room)
     return room.room_id
 
 
 @app.put("/rooms/{room_id}/players/add", status_code=status.HTTP_204_NO_CONTENT)
 async def add_player(
+    *,
+    session: Session = Depends(get_session),
     room_id: Annotated[uuid.UUID, Path()],
     player_id: Annotated[uuid.UUID, Body(embed=True)],
 ) -> None:
@@ -102,7 +103,9 @@ async def add_player(
     response_model=list[PlayerSchema],
     status_code=status.HTTP_200_OK,
 )
-async def get_players(room_id: Annotated[uuid.UUID, Path()]) -> list[Player]:
+async def get_players(
+    *, session: Session = Depends(get_session), room_id: Annotated[uuid.UUID, Path()]
+) -> list[Player]:
     try:
         room = rooms[room_id]
     except KeyError:
@@ -129,7 +132,10 @@ async def get_players(room_id: Annotated[uuid.UUID, Path()]) -> list[Player]:
     status_code=status.HTTP_200_OK,
 )
 async def make_play(
-    room_id: Annotated[uuid.UUID, Path()], input: Annotated[PlayInput, Body()]
+    *,
+    session: Session = Depends(get_session),
+    room_id: Annotated[uuid.UUID, Path()],
+    input: Annotated[PlayInput, Body()],
 ) -> list[list[str]]:
     try:
         room = rooms[room_id]
@@ -171,7 +177,9 @@ async def make_play(
     response_model=uuid.UUID | NextTurn,
     status_code=status.HTTP_200_OK,
 )
-async def decide_result(room_id: Annotated[uuid.UUID, Path()]) -> uuid.UUID | NextTurn:
+async def decide_result(
+    *, session: Session = Depends(get_session), room_id: Annotated[uuid.UUID, Path()]
+) -> uuid.UUID | NextTurn:
     """Function returns a player id if any player is declared winner.
     In case of a stalemate or a turn not ending the game, returns a NextTurn specifying
     whether to continue the game or not"""

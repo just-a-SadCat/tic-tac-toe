@@ -4,9 +4,9 @@ from app.player import Player
 
 
 class BoardStates(str, Enum):
-    NO_WIN = 0
-    WIN = 1
-    STALEMATE = 2
+    NO_WIN = "NO_WIN"
+    WIN = "WIN"
+    STALEMATE = "STALEMATE"
 
 
 class Board:
@@ -32,7 +32,7 @@ class Board:
         except IndexError:
             raise IncorrectInput("The chosen indexes were invalid")
 
-    def check_victory(self, player: Player) -> BoardStates:
+    def check_victory(self, player: Player) -> bool:
         symbol = f"[{player.symbol}]"
 
         for row in self._fields:
