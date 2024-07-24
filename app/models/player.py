@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import List, TYPE_CHECKING
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 import uuid
@@ -8,6 +9,11 @@ if TYPE_CHECKING:
     from app.models.room import Room
 
 
+class Symbols(str, Enum):
+    X = "X"
+    O = "O"
+
+
 class Player(Base):
     __tablename__ = "players"
     player_id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
@@ -16,5 +22,5 @@ class Player(Base):
 
     rooms: Mapped[List["Room"]] = relationship(
         "Room",
-        primaryjoin="Player.player_id == Room.first_player_id OR Player.player_id == Room.second_player_id",
+        primaryjoin="_or(Player.player_id == Room.first_player_id, Player.player_id == Room.second_player_id)",
     )

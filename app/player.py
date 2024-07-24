@@ -23,8 +23,3 @@ class Player:
     @symbol.setter
     def symbol(self, symbol: str) -> None:
         self._symbol = symbol
-
-
-class Symbols(str, Enum):
-    X = "X"
-    O = "O"

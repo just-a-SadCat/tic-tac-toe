@@ -8,19 +8,8 @@ from app.exc import (
     RoomFull,
     RoomNotFull,
 )
+from app.models.room import WinnerStates
 from app.player import Player, Symbols
-
-
-class WinnerStates(str, Enum):
-    NONE = "NONE"
-    FIRST = "FIRST"
-    SECOND = "SECOND"
-    STALEMATE = "STALEMATE"
-
-
-class NextTurn(str, Enum):
-    NO = "NO"
-    YES = "YES"
 
 
 class Room:

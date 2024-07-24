@@ -15,6 +15,18 @@ class ActiveState(str, Enum):
     SECOND = "SECOND"
 
 
+class WinnerStates(str, Enum):
+    NONE = "NONE"
+    FIRST = "FIRST"
+    SECOND = "SECOND"
+    STALEMATE = "STALEMATE"
+
+
+class NextTurn(str, Enum):
+    NO = "NO"
+    YES = "YES"
+
+
 class Room(Base):
     __tablename__ = "rooms"
 
@@ -36,7 +48,7 @@ class Room(Base):
 
     board_JSON: Mapped[str] = mapped_column(
         JSON(none_as_null=False),
-        default="[[" ", " ", " "],[" ", " ", " "], [" ", " ", " "]]",
+        default='[[" ", " ", " "],[" ", " ", " "], [" ", " ", " "]]',
     )
 
     @property
@@ -49,3 +61,7 @@ class Room(Base):
     @property
     def board(self) -> Board:
         return Board(self.board_JSON)
+
+    @property
+    def update_board(self, update: str):
+        self.board_JSON = update
