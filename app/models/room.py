@@ -1,10 +1,13 @@
 from enum import Enum
-from typing import List
+from typing import List, TYPE_CHECKING
 import uuid
-from sqlalchemy import ForeignKey
+from sqlalchemy import JSON, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.board import Board
-from models.base import Base
+
+if TYPE_CHECKING:
+    from app.models.player import Player
+from app.models.base import Base
 
 
 class ActiveState(str, Enum):
@@ -31,23 +34,18 @@ class Room(Base):
 
     active_player_state: Mapped[ActiveState] = mapped_column(default=ActiveState.FIRST)
 
-    board: Mapped[Board]  # TODO
+    board_JSON: Mapped[str] = mapped_column(
+        JSON(none_as_null=False),
+        default="[[" ", " ", " "],[" ", " ", " "], [" ", " ", " "]]",
+    )
 
     @property
-    def active_player(self):
+    def active_player(self) -> "Player":
         if self.active_player_state is ActiveState.FIRST:
             return self.first_player
         else:
             return self.second_player
 
-
-class Player(Base):
-    __tablename__ = "players"
-    player_id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
-    name: Mapped[str]
-    symbol: Mapped[str | None] = mapped_column(default=None)
-
-    rooms: Mapped[List[Room]] = relationship(
-        "Room",
-        primaryjoin="Player.player_id == Room.first_player_id OR Player.player_id == Room.second_player_id",
-    )
+    @property
+    def board(self) -> Board:
+        return Board(self.board_JSON)

@@ -1,4 +1,5 @@
 from enum import Enum
+import json
 from app.exc import IncorrectInput, InvalidPlay
 from app.player import Player
 
@@ -10,23 +11,20 @@ class BoardStates(str, Enum):
 
 
 class Board:
-    def __init__(self) -> None:
-        self._fields = [
-            ["[ ]", "[ ]", "[ ]"],
-            ["[ ]", "[ ]", "[ ]"],
-            ["[ ]", "[ ]", "[ ]"],
-        ]
+    def __init__(self, fields: str) -> None:
+        self._fields = fields
 
     @property
     def fields(self) -> list[list[str]]:
-        return self._fields
+        result: list[list[str]] = json.loads(self._fields)
+        return result
 
     def edit_field(self, symbol: str, row: int, col: int) -> None:
         if row < 1 or col < 1:
             raise IncorrectInput("The input was a zero or a negative number")
         try:
-            if self._fields[row - 1][col - 1] == "[ ]":
-                self._fields[row - 1][col - 1] = f"[{symbol}]"
+            if self.fields[row - 1][col - 1] == " ":
+                self.fields[row - 1][col - 1] = symbol
             else:
                 raise InvalidPlay("A used field was chosen")
         except IndexError:
@@ -35,24 +33,24 @@ class Board:
     def check_victory(self, player: Player) -> bool:
         symbol = f"[{player.symbol}]"
 
-        for row in self._fields:
+        for row in self.fields:
             if all(col == symbol for col in row):
                 print(f"{player.name} wins, a full row!")
                 return True
 
         for col in range(0, 3):
-            if all(self._fields[i][col] == symbol for i in range(3)):
+            if all(self.fields[i][col] == symbol for i in range(3)):
                 print(f"{player.name} wins, a full column!")
                 return True
 
-        if all(self._fields[i][i] == symbol for i in range(3)):
+        if all(self.fields[i][i] == symbol for i in range(3)):
             print(f"{player.name} wins, a full diagonal!")
             return True
 
         if (
-            self._fields[0][2] == symbol
-            and self._fields[1][1] == symbol
-            and self._fields[2][0] == symbol
+            self.fields[0][2] == symbol
+            and self.fields[1][1] == symbol
+            and self.fields[2][0] == symbol
         ):
             print(f"{player.name} wins, a full diagonal!")
             return True
@@ -60,8 +58,8 @@ class Board:
         return False
 
     def check_stalemate(self) -> bool:
-        for row in self._fields:
+        for row in self.fields:
             for col in row:
-                if col == "[ ]":
+                if col == " ":
                     return False
         return True
