@@ -9,7 +9,7 @@ from app.exc import (
     RoomNotFull,
 )
 from app.models.room import WinnerStates
-from app.player import Player, Symbols
+from app.models.player import Player, Symbols
 
 
 class Room:

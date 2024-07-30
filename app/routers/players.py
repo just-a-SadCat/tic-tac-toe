@@ -8,14 +8,15 @@ from app.db import get_session
 from app.models.player import Player
 
 
-router = APIRouter()
+router = APIRouter(prefix="/players")
 
 
-@router.post("/players", response_model=uuid.UUID, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=uuid.UUID, status_code=status.HTTP_201_CREATED)
 async def create_player(
     *, session: Session = Depends(get_session), name: Annotated[str, Body(embed=True)]
 ) -> uuid.UUID:
     player_id = uuid.uuid4()
-    player = Player(player_id, name)
+    player = Player(player_id=player_id, name=name)
     session.add(player)
-    return player.player_id
+    session.commit()
+    return player.get_player_id

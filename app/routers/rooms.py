@@ -17,49 +17,49 @@ from app.exc import (
 )
 from app.models.player import Player
 from app.models.room import NextTurn, Room, WinnerStates
-from app.schema.schema import PlayInput, PlayerSchema
+from app.schema import PlayInput, PlayerSchema
 
-router = APIRouter()
+router = APIRouter(prefix="/rooms")
 
 
-@router.post("/rooms", response_model=uuid.UUID, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=uuid.UUID, status_code=status.HTTP_201_CREATED)
 async def create_room(
     *,
     session: Session = Depends(get_session),
     player_id: Annotated[uuid.UUID, Body(embed=True)],
 ) -> uuid.UUID:
     room_id = uuid.uuid4()
-    try:
-        player = session.execute(select(Player).where(Player.player_id == player_id))
-        player = session.execute(select(Player).filter_by(player_id=player_id))
-    except KeyError:
+    result = session.execute(select(Player).where(Player.player_id == player_id))
+    player = result.scalar()
+    if player is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Player with given id not found",
         )
-    room = Room(room_id, player)
+    room = Room(room_id=room_id, first_player_id=player.get_player_id)
     session.add(room)
-    return room.room_id
+    session.commit()
+    return room.get_room_id
 
 
-@router.put("/rooms/{room_id}/players/add", status_code=status.HTTP_204_NO_CONTENT)
+@router.put("/{room_id}/players/add", status_code=status.HTTP_204_NO_CONTENT)
 async def add_player(
     *,
     session: Session = Depends(get_session),
     room_id: Annotated[uuid.UUID, Path()],
     player_id: Annotated[uuid.UUID, Body(embed=True)],
 ) -> None:
-    try:
-        room = session.execute(select(Room).where(Room.room_id == room_id))
-    except KeyError:
+    result = session.execute(select(Room).where(Room.room_id == room_id))
+    room = result.scalar()
+    if room is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Room with given id not found",
         )
 
-    try:
-        player = session.execute(select(Player).where(Player.player_id == player_id))
-    except KeyError:
+    result = session.execute(select(Player).where(Player.player_id == player_id))
+    player = result.scalar()
+    if player is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Player with given id not found",
@@ -77,19 +77,20 @@ async def add_player(
             status_code=status.HTTP_406_NOT_ACCEPTABLE,
             detail="Room cannot have multiple instances of the same player",
         )
+    session.commit()
 
 
 @router.get(
-    "/rooms/{room_id}/players",
+    "/{room_id}/players",
     response_model=list[PlayerSchema],
     status_code=status.HTTP_200_OK,
 )
 async def get_players(
     *, session: Session = Depends(get_session), room_id: Annotated[uuid.UUID, Path()]
 ) -> list[Player]:
-    try:
-        room = session.execute(select(Room).where(Room.room_id == room_id))
-    except KeyError:
+    result = session.execute(select(Room).where(Room.room_id == room_id))
+    room = result.scalar()
+    if room is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Room with given id not found",
@@ -108,7 +109,7 @@ async def get_players(
 
 
 @router.put(
-    "/rooms/{room_id}/board",
+    "/{room_id}/board",
     response_model=list[list[str]],
     status_code=status.HTTP_200_OK,
 )
@@ -118,19 +119,17 @@ async def make_play(
     room_id: Annotated[uuid.UUID, Path()],
     input: Annotated[PlayInput, Body()],
 ) -> list[list[str]]:
-    try:
-        room = session.execute(select(Room).where(Room.room_id == room_id))
-    except KeyError:
+    result = session.execute(select(Room).where(Room.room_id == room_id))
+    room = result.scalar()
+    if room is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Room with given id not found",
         )
 
-    try:
-        player = session.execute(
-            select(Player).where(Player.player_id == input.player_id)
-        )
-    except KeyError:
+    result = session.execute(select(Player).where(Player.player_id == input.player_id))
+    player = result.scalar()
+    if player is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Player with given id not found",
@@ -152,11 +151,12 @@ async def make_play(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Player attempted an impossible play",
         )
+    session.commit()
     return room.print_board()
 
 
 @router.get(
-    "/rooms/{room_id}/board",
+    "/{room_id}/board",
     response_model=uuid.UUID | NextTurn,
     status_code=status.HTTP_200_OK,
 )
@@ -166,9 +166,9 @@ async def decide_result(
     """Function returns a player id if any player is declared winner.
     In case of a stalemate or a turn not ending the game, returns a NextTurn specifying
     whether to continue the game or not"""
-    try:
-        room = session.execute(select(Room).where(Room.room_id == room_id))
-    except KeyError:
+    result = session.execute(select(Room).where(Room.room_id == room_id))
+    room = result.scalar()
+    if room is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Room with given id not found",
@@ -179,9 +179,9 @@ async def decide_result(
             case WinnerStates.NONE:
                 return NextTurn.YES
             case WinnerStates.FIRST:
-                return room.first_player.player_id
+                return room.first_player.get_player_id
             case WinnerStates.SECOND:
-                return room.second_player.player_id
+                return room.second_player.get_player_id
             case WinnerStates.STALEMATE:
                 return NextTurn.NO
     except BoardStatesNotFound:

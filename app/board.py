@@ -19,19 +19,21 @@ class Board:
         result: list[list[str]] = json.loads(self._fields)
         return result
 
-    def edit_field(self, symbol: str, row: int, col: int) -> None:
+    def edit_field(self, symbol: str, row: int, col: int) -> list[list[str]]:
+        board = self.fields
         if row < 1 or col < 1:
             raise IncorrectInput("The input was a zero or a negative number")
         try:
-            if self.fields[row - 1][col - 1] == " ":
-                self.fields[row - 1][col - 1] = symbol
+            if board[row - 1][col - 1] == " ":
+                board[row - 1][col - 1] = symbol
+                return board
             else:
                 raise InvalidPlay("A used field was chosen")
         except IndexError:
             raise IncorrectInput("The chosen indexes were invalid")
 
     def check_victory(self, player: Player) -> bool:
-        symbol = f"[{player.symbol}]"
+        symbol = player.symbol
 
         for row in self.fields:
             if all(col == symbol for col in row):
